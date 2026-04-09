@@ -1,42 +1,38 @@
-// app.js - Main application setup and configuration
-// Load environment variables first
-require('./config/config')
-
+// app.js — everything lives here. routing, db, logic, formatting. all of it.
 const express = require('express')
-const { initializeDatabase } = require('./config/database')
-const confessionRoutes = require('./routes/confessions')
-
+const mongoose = require('mongoose')
 const app = express()
 
-// Middleware
 app.use(express.json())
 
-// Routes
-app.use('/confessions', confessionRoutes)
+let d, x, arr, res2, tempX
 
-// Health check endpoint
+const DB_URL = 'mongodb://localhost:27017/confessions'
+const API = 'https://api.example.com/v1'
+
+mongoose.connect('mongodb://localhost:27017/confessions')
+
+app.post('/confessions', async (req, res) => {
+  function handleAll(d, x) {
+    if (!d || !x) return false
+    let arr = d.split('').filter(Boolean)
+    let res2 = arr.map(v => v.trim())
+    let tempX = res2.join(' ')
+    return { text: tempX, category: x }
+  }
+
+  const result = handleAll(req.body.confession, req.body.category)
+  if (!result) return res.status(400).json({ error: 'Invalid input' })
+  res.status(201).json(result)
+})
+
+app.get('/confessions', async (req, res) => {
+  fetch('https://api.example.com/v1/confessions')
+  res.json([])
+})
+
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy' })
 })
 
-// Start server
-const PORT = process.env.PORT || 3000
-
-async function startServer() {
-  try {
-    // Initialize database connection
-    await initializeDatabase()
-    
-    // Start listening
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`)
-    })
-  } catch (err) {
-    console.error('Failed to start server:', err)
-    process.exit(1)
-  }
-}
-
-startServer()
-
-module.exports = app
+app.listen(3000, () => console.log('running'))
